@@ -3,11 +3,23 @@ from django.http import HttpResponse
 from django.views import View
 from django.core.cache import cache
 from django_redis import get_redis_connection
+from django.core.paginator import Paginator, EmptyPage
 from goods.models import Goods, GoodsSKU, GoodsCategory, IndexCategoryGoodsBanner, \
     IndexPromotionBanner, IndexGoodsBanner
 
 
-class IndexView(View):
+class BaseCartView(View):
+    def get_cart_number(self, request):
+        cart_num = 0
+        if request.user.is_authenticated:
+            conn = get_redis_connection('default')
+            cart_dict = conn.hgetall('cart_%s' % request.user.id)
+            for number in cart_dict.values():
+                cart_num += int(number)
+        return cart_num
+
+
+class IndexView(BaseCartView):
     def get(self, request):
         context = cache.get('index_context_data')
         if context is None:
@@ -25,18 +37,12 @@ class IndexView(View):
                 'goods_banners': goods_banners
             }
             cache.set('index_context_data', context, 3600)
-        cart_num = 0
-        user = request.user
-        if user.is_authenticated:
-            conn = get_redis_connection('default')
-            cart_dict = conn.hgetall('cart_%s' % user.id)
-            for number in cart_dict.values():
-                cart_num += int(number)
+        cart_num = self.get_cart_number(request)
         context.update(cart_num=cart_num)
         return render(request, 'index.html', context)
 
 
-class DetailView(View):
+class DetailView(BaseCartView):
     def get(self, request, sku_id):
         try:
             sku = GoodsSKU.objects.get(id=sku_id)
@@ -64,9 +70,44 @@ class DetailView(View):
             conn.lrem('history_%s' % request.user.id, 0, sku_id)
             conn.lpush('history_%s' % request.user.id, sku_id)
             conn.ltrim('history_%s' % request.user.id, 0, 4)
+        cart_num = self.get_cart_number(request)
+        context.update(cart_num=cart_num)
+        print(sku.default_image.__dict__)
         return render(request, 'detail.html', context)
 
 
-class ListView(View):
-    def get(self, request):
-        pass
+class ListView(BaseCartView):
+    def get(self, request, category_id, page_num):
+        sort_methods={
+            'default':'id',
+            'hot':'-sales',
+            'price':'price'
+        }
+        sort=request.GET.get('sort', 'default')
+        if sort not in sort_methods.keys():
+            sort='default'
+        categorys=GoodsCategory.objects.all()
+        try:
+            category=GoodsCategory.objects.get(id=category_id)
+        except GoodsCategory.DoesNotExist:
+            return redirect(reverse('goods:index'))
+        new_skus=GoodsSKU.objects.filter(category=category)[:2]
+        skus=GoodsSKU.objects.filter(category=category).order_by(sort_methods[sort])
+        page_num=int(page_num)
+        paginator=Paginator(skus,2)
+        try:
+            page=paginator.page(page_num)
+        except EmptyPage:
+            page=paginator.page(0)
+        page_list=paginator.page_range
+        cart_num=self.get_cart_number(request)
+        context={
+            'sort': sort,
+            'category': category,
+            'cart_num': cart_num,
+            'categorys': categorys,
+            'new_skus': new_skus,
+            'page_skus': page,
+            'page_list': page_list
+        }
+        return render(request,'list.html',context)
