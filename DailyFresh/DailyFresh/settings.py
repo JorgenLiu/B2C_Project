@@ -158,6 +158,7 @@ DEFAULT_FILE_STORAGE = 'utils.fastdfs.storage.FastDFSStorage'
 CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
 SERVER_IP = 'http://192.168.195.130:8888/'
 
+
 TINYMCE_DEFAULT_CONFIG = {
   'theme': 'advanced',
   'width': 600,
