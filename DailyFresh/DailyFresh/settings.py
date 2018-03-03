@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'tinymce',
     'users',
     'goods',
     'orders',
@@ -121,7 +122,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 STATIC_URL = '/static/'
-STATICFILES_PATH = os.path.join(BASE_DIR, 'statics')
+# Seriously Importance: the path STATICFILES_DIRS must be defined as a list,
+# for django would automatically take the first element
+# If it is defined as a string,
+# the website would crash for the path is invalid
+STATICFILES_DIRS=[
+    os.path.join(BASE_DIR,'static')
+]
 
 # Email Server Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -150,3 +157,9 @@ AUTH_USER_MODEL = 'users.User'
 DEFAULT_FILE_STORAGE = 'utils.fastdfs.storage.FastDFSStorage'
 CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
 SERVER_IP = 'http://192.168.195.130:8888/'
+
+TINYMCE_DEFAULT_CONFIG = {
+  'theme': 'advanced',
+  'width': 600,
+  'height': 400,
+}
