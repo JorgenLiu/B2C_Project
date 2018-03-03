@@ -72,7 +72,6 @@ class DetailView(BaseCartView):
             conn.ltrim('history_%s' % request.user.id, 0, 4)
         cart_num = self.get_cart_number(request)
         context.update(cart_num=cart_num)
-        print(sku.default_image.__dict__)
         return render(request, 'detail.html', context)
 
 
