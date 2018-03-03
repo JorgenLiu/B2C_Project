@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os, sys
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(1, os.path.join(BASE_DIR,'apps'))
+sys.path.insert(1, os.path.join(BASE_DIR, 'apps'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -25,7 +26,6 @@ SECRET_KEY = 'e6dm0(59-g$bcb(3wm-up#(1v0@y2x+*#(5k+v(6rp+qy#=4$2'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -73,7 +73,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'DailyFresh.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
@@ -81,13 +80,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'df_db',
-        'HOST':'localhost',
-        'PORT':3306,
-        'USER':'root',
-        'PASSWORD':'123456'
+        'HOST': 'localhost',
+        'PORT': 3306,
+        'USER': 'root',
+        'PASSWORD': '123456'
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -107,7 +105,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -121,12 +118,10 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 STATIC_URL = '/static/'
 STATICFILES_PATH = os.path.join(BASE_DIR, 'statics')
-
 
 # Email Server Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -137,8 +132,8 @@ EMAIL_HOST_PASSWORD = 'avalon852456'
 EMAIL_FROM = '天天生鲜<jordenliuswansea@163.com>'
 
 # Cache Storage Configuration
-CACHES={
-    'default':{
+CACHES = {
+    'default': {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/5",
         "OPTIONS": {
@@ -146,8 +141,12 @@ CACHES={
         }
     }
 }
-SESSION_ENGINE='django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = "default"
 
-LOGIN_URL='/users/login'
-AUTH_USER_MODEL='users.User'
+LOGIN_URL = '/users/login'
+AUTH_USER_MODEL = 'users.User'
+
+DEFAULT_FILE_STORAGE = 'utils.fastdfs.storage.FastDFSStorage'
+CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
+SERVER_IP = 'http://192.168.195.130:8888/'

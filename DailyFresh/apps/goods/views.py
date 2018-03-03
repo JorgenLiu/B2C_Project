@@ -5,3 +5,12 @@ from django.views import View
 class IndexView(View):
     def get(self,request):
         return HttpResponse('index')
+
+class DetailView(View):
+    def get(self,request):
+        pass
+
+class ListView(View):
+    def get(self,request):
+        pass
+
