@@ -168,7 +168,8 @@ TINYMCE_DEFAULT_CONFIG = {
 
 HAYSTACK_CONNECTIONS = {
   'default': {
-      'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+      'ENGINE': 'utils.jieba_based_segmentation.whoosh_cn_backend.WhooshEngine',
+      # 'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
       'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
   }
 }
