@@ -73,11 +73,13 @@ class LoginView(View):
             cart_dict_redis[sku_id]=count
         if cart_dict_redis:
             conn.hmset('cart_%s'%user.id, cart_dict_redis)
-        if request.GET.get('next'):
-            response= redirect(request.GET.get('next'))
+        next = request.GET.get('next')
+        if not next:
+            response = redirect('goods:index')
+        elif next == '/orders/place':
+            response = redirect(reverse('cart:info'))
         else:
-            response= redirect('goods:index')
-        response.delete_cookie('cart')
+            response = redirect(next)
         return response
 
 
