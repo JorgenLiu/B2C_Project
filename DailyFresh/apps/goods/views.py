@@ -6,6 +6,7 @@ from django_redis import get_redis_connection
 from django.core.paginator import Paginator, EmptyPage
 from goods.models import Goods, GoodsSKU, GoodsCategory, IndexCategoryGoodsBanner, \
     IndexPromotionBanner, IndexGoodsBanner
+import json
 
 
 class BaseCartView(View):
@@ -14,8 +15,14 @@ class BaseCartView(View):
         if request.user.is_authenticated:
             conn = get_redis_connection('default')
             cart_dict = conn.hgetall('cart_%s' % request.user.id)
-            for number in cart_dict.values():
-                cart_num += int(number)
+        else:
+            cart_json=request.COOKIES.get('cart')
+            if cart_json:
+                cart_dict=json.loads(cart_json)
+            else:
+                cart_dict={}
+        for number in cart_dict.values():
+            cart_num += int(number)
         return cart_num
 
 
@@ -30,11 +37,11 @@ class IndexView(BaseCartView):
                 category.image_banners = IndexCategoryGoodsBanner. \
                     objects.filter(category=category, display_type=1)
             promotion_banners = IndexPromotionBanner.objects.all().order_by('index')
-            goods_banners = IndexGoodsBanner.objects.all().order_by('index')
+            index_banners = IndexGoodsBanner.objects.all().order_by('index')
             context = {
                 'categorys': categorys,
                 'promotion_banners': promotion_banners,
-                'goods_banners': goods_banners
+                'index_banners': index_banners
             }
             cache.set('index_context_data', context, 3600)
         cart_num = self.get_cart_number(request)

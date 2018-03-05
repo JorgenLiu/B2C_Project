@@ -20,7 +20,7 @@
     </div>
 
     <div class="breadcrumb">
-        <a href="{% url 'goods:index' %}">全部分类</a>
+        <a href="/">全部分类</a>
         <span>></span>
         <a href="#">{{ sku.category.name }}</a>
         <span>></span>
@@ -93,7 +93,7 @@
             </div>
 
             <div class="tab_content" id="tab_comment" style="display: none;">
-                {% for order in sku_orders %}
+                {% for order in orders %}
                 <dl>
                     <dd>客户：{{ order.username }}&nbsp;&nbsp;&nbsp;时间：{{ order.ctime }}</dd>
                     <dt>{{ order.comment }}</dt>
@@ -149,10 +149,7 @@
             // 使用ajax向后端发送数据
             $.post("/cart/add", req_data, function (response_data) {
                 // 根据response_data中的code决定处理效果
-                if (1 == response_data.code) {
-                    // 用户未登录
-                    window.location.href = "/users/login";  // 让页面跳转到登录页面
-                } else if (0 == response_data.code) {
+                if (0 == response_data.code) {
                     // 添加到购物车成功动画
                     $(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'});
 
@@ -169,7 +166,7 @@
                     // 其他错误信息，alert展示
                     alert(response_data.message);
                 }
-            });
+            }, "json");
         });
         $("#add").click(function(){
             var num_show = $("#num_show").val();
