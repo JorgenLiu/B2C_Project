@@ -29,9 +29,13 @@
 
     <div class="goods_detail_con clearfix">
         <div class="goods_detail_pic fl"><img src="{{ sku.default_image.url }}"></div>
-        <form action="{% url 'orders:place' %}" method="post">
+
+        <form method="post" action="{% url 'orders:place' %}">
+
             {% csrf_token %}
+
             <input type="hidden" name="sku_ids" value="{{ sku.id }}">
+
             <div class="goods_detail_list fr">
                 <h3>{{ sku.name }}</h3>
                 <p>{{ sku.title }}</p>
@@ -59,7 +63,7 @@
                 </div>
                 <div class="total">总价：<em>{{ sku.price }}</em>元</div>
                 <div class="operate_btn">
-                    <input type="submit" class="buy_btn" id="buy_btn" value="立即剁手">
+                    <input type="submit" class="buy_btn" id="buy_btn" value="立即购买">
                     <a href="javascript:;" class="add_cart" sku_id="{{ sku.id }}" id="add_cart">加入购物车</a>
                 </div>
             </div>
@@ -97,11 +101,13 @@
 
             <div class="tab_content" id="tab_comment" style="display: none;">
                 {% for order in orders %}
-                    <dl>
-                        <dd>客户：{{ order.username }}&nbsp;&nbsp;&nbsp;时间：{{ order.ctime }}</dd>
-                        <dt>{{ order.comment }}</dt>
-                    </dl>
-                    <hr/>
+                    {% if order.comment %}
+                        <dl>
+                            <dd>客户：{{ order.username }}&nbsp;&nbsp;&nbsp;时间：{{ order.ctime }}</dd>
+                            <dt>{{ order.comment }}</dt>
+                        </dl>
+                        <hr/>
+                    {% endif %}
                 {% endfor %}
             </div>
 
