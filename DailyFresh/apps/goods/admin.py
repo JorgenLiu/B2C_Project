@@ -1,15 +1,20 @@
 from django.contrib import admin
+from django.core.cache import cache
 from goods.models import GoodsSKU, GoodsCategory, Goods, IndexCategoryGoodsBanner, IndexPromotionBanner
 from celery_tasks.tasks import generate_static_index
+
 
 # Register your models here.
 class BaseAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.save()
         generate_static_index.delay()
+        cache.delete('index_context_data')
+
     def delete_model(self, request, obj):
         obj.delete()
         generate_static_index.delay()
+        cache.delete('index_context_data')
 
 class IndexPromotionBannerAdmin(BaseAdmin):
     pass

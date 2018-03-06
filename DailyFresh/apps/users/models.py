@@ -19,7 +19,7 @@ class User(AbstractUser, BaseModel):
 
 class Address(BaseModel):
     """地址"""
-    user = models.ForeignKey(User, verbose_name="所属用户",on_delete=False)
+    user = models.ForeignKey(User, verbose_name="所属用户")
     receiver_name = models.CharField(max_length=20, verbose_name="收件人")
     receiver_mobile = models.CharField(max_length=11, verbose_name="联系电话")
     detail_addr = models.CharField(max_length=256, verbose_name="详细地址")

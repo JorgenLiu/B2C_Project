@@ -16,10 +16,14 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from tinymce import urls
+from haystack import urls
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^users/', include('users.urls', namespace='users')),
     url(r'^', include('goods.urls', namespace='goods')),
+    url(r'^cart/',include('carts.urls',namespace='cart')),
+    url(r'^orders/', include('orders.urls', namespace='orders')),
     url(r'^tinymce/', include('tinymce.urls')),
+    url(r'search/',include('haystack.urls')),
 ]
