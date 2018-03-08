@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage
 from utils.views import LoginMixin, JsonLoginMixin, TransactionSupportedMixin
 from goods.models import GoodsSKU
 from users.models import Address
@@ -8,11 +9,38 @@ from orders.models import OrderGoods, OrderInfo
 from django_redis import get_redis_connection
 from django.utils import timezone
 from django.db import transaction
+from django.conf import settings
+from django.core.cache import cache
+from alipay import AliPay
 
 
 class OrderInfoView(LoginMixin, View):
     def get(self, request, page):
-        pass
+        user = request.user
+        orders = user.orderinfo_set.all()
+        pages = Paginator(orders, 2)
+        for order in orders:
+            order.status_name = OrderInfo.ORDER_STATUS[order.status]
+            order.pay_method_name = OrderInfo.PAY_METHODS[order.pay_method]
+            order.skus = []
+            for order_goods in order.ordergoods_set.all():
+                sku = order_goods.sku
+                sku.count = order_goods.count
+                sku.amount = sku.price * sku.count
+                order.skus.append(sku)
+        page = int(page)
+        try:
+            page_orders = pages.page(page)
+        except EmptyPage:
+            page_orders = pages.page(1)
+            page = 1
+        page_list = pages.page_range
+        context = {
+            "orders": page_orders,
+            "page": page,
+            "page_list": page_list,
+        }
+        return render(request, 'user_center_order.html', context)
 
 
 class PlaceOrderView(LoginMixin, View):
@@ -146,3 +174,121 @@ class CommitOrderView(JsonLoginMixin, TransactionSupportedMixin, View):
         transaction.savepoint_commit(safe_point)
         conn.hdel('cart_%s' % user.id, *sku_ids)
         return JsonResponse({'code': 0, 'message': '订单创建成功'})
+
+
+class PaymentView(LoginMixin, View):
+    """
+    买家账号kblrqs5230@sandbox.com
+    登录密码111111
+    支付密码111111
+    """
+
+    def post(self, request):
+        order_id = request.POST.get('order_id')
+        if not order_id:
+            return JsonResponse({'code': 2, 'message': '订单id错误'})
+        try:
+            order = OrderInfo.objects.get(
+                order_id=order_id,
+                user=request.user,
+                status=OrderInfo.ORDER_STATUS_ENUM['UNPAID'],
+                pay_method=OrderInfo.PAY_METHODS_ENUM['ALIPAY']
+            )
+        except OrderInfo.DoesNotExist:
+            return JsonResponse({'code': 3, 'message': '订单错误'})
+        payment_client = AliPay(
+            appid=settings.ALIPAY_APPID,
+            app_notify_url=None,
+            app_private_key_path=settings.APP_PRIVATE_KEY_PATH,
+            alipay_public_key_path=settings.ALIPAY_PUBLIC_KEY_PATH,
+            sign_type="RSA2",
+            debug=True
+        )
+        order_url = payment_client.api_alipay_trade_page_pay(
+            out_trade_no=order_id,
+            total_amount=str(order.total_amount),
+            subject='头条生鲜',
+            return_url=None,
+            notify_url=None
+        )
+        url = settings.ALIPAY_URL + '?' + order_url
+        return JsonResponse({'code': 0, 'message': '支付成功', 'url': url})
+
+
+class CheckStatusView(LoginMixin, View):
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        if not order_id:
+            return JsonResponse(({'code': 2, 'message': '订单id错误'}))
+        try:
+            order = OrderInfo.objects.get(
+                order_id=order_id,
+                user=request.user,
+                status=OrderInfo.ORDER_STATUS_ENUM["UNPAID"],
+                pay_method=OrderInfo.PAY_METHODS_ENUM["ALIPAY"]
+            )
+        except OrderInfo.DoesNotExist:
+            return JsonResponse(({'code': 3, 'message': '订单错误'}))
+        check_client = AliPay(
+            appid=settings.ALIPAY_APPID,
+            app_notify_url=None,
+            app_private_key_path=settings.APP_PRIVATE_KEY_PATH,
+            alipay_public_key_path=settings.ALIPAY_PUBLIC_KEY_PATH,
+            sign_type="RSA2",
+            debug=True
+        )
+        while True:
+            response = check_client.api_alipay_trade_query(order_id)
+            print(response)
+            code = response.get('code')
+            trade_status = response.get('trade_status')
+            if code == '10000' and trade_status == 'TRADE_SUCCESS':
+                order.status = OrderInfo.ORDER_STATUS_ENUM['UNCOMMENT']
+                order.trade_id = response.get('trade_no')
+                order.save()
+                return JsonResponse({'code': 0, 'message': '支付成功'})
+            elif code == '40004' or (code == '10000' and trade_status == 'WAIT_BUYER_PAY'):
+                continue
+            else:
+                return JsonResponse({'code': 4, 'message': '支付失败'})
+
+
+class CommentView(LoginMixin, View):
+    def get(self, request, order_id):
+        try:
+            order = OrderInfo.objects.get(order_id=order_id)
+        except OrderInfo.DoesNotExist:
+            return redirect(reverse('orders:info'))
+        order.status_name = OrderInfo.ORDER_STATUS[order.status]
+        order.skus = []
+        order_goods = order.ordergoods_set.all()
+        for order_sku in order_goods:
+            sku = order_sku.sku
+            sku.count = order_sku.count
+            sku.amount = order_sku.count * sku.price
+            order.skus.append(sku)
+        context = {
+            'order': order
+        }
+        return render(request, 'order_comment.html', context)
+
+    def post(self, request, order_id):
+        try:
+            order = OrderInfo.objects.get(order_id=order_id, user=request.user)
+        except OrderInfo.DoesNotExist:
+            return redirect(reverse('orders:info'))
+        order.status_name = OrderInfo.ORDER_STATUS[order.status]
+        total_count = int(request.POST.get('total_count'))
+        for i in range(1, total_count + 1):
+            sku_id = request.POST.get('sku_%s' % i)
+            content = request.POST.get('content_%s' % i)
+            try:
+                order_sku = OrderGoods.objects.get(order=order, sku_id=sku_id)
+            except OrderGoods.DoesNotExist:
+                continue
+            order_sku.comment = content
+            order_sku.save()
+            cache.delete('details_%s' % sku_id)
+        order.status = OrderInfo.ORDER_STATUS_ENUM['FINISHED']
+        order.save()
+        return redirect(reverse('orders:info', kwargs={'page': 1}))

@@ -16,11 +16,11 @@ class BaseCartView(View):
             conn = get_redis_connection('default')
             cart_dict = conn.hgetall('cart_%s' % request.user.id)
         else:
-            cart_json=request.COOKIES.get('cart')
+            cart_json = request.COOKIES.get('cart')
             if cart_json:
-                cart_dict=json.loads(cart_json)
+                cart_dict = json.loads(cart_json)
             else:
-                cart_dict={}
+                cart_dict = {}
         for number in cart_dict.values():
             cart_num += int(number)
         return cart_num
@@ -61,7 +61,7 @@ class DetailView(BaseCartView):
         if sku_orders:
             for order in sku_orders:
                 order.ctime = order.create_time.strftime('%Y-%m-%d %H:%M:%S')
-                order.user_name = order.order.user.username
+                order.username = order.order.user.username
         else:
             sku_orders = []
         other_skus = sku.goods.goodssku_set.exclude(id=sku_id)
@@ -69,7 +69,7 @@ class DetailView(BaseCartView):
             'categorys': categorys,
             'sku': sku,
             'new_skus': new_skus,
-            'sku_orders': sku_orders,
+            'orders': sku_orders,
             'other_skus': other_skus
         }
         if request.user.is_authenticated:
@@ -84,30 +84,30 @@ class DetailView(BaseCartView):
 
 class ListView(BaseCartView):
     def get(self, request, category_id, page_num):
-        sort_methods={
-            'default':'id',
-            'hot':'-sales',
-            'price':'price'
+        sort_methods = {
+            'default': 'id',
+            'hot': '-sales',
+            'price': 'price'
         }
-        sort=request.GET.get('sort', 'default')
+        sort = request.GET.get('sort', 'default')
         if sort not in sort_methods.keys():
-            sort='default'
-        categorys=GoodsCategory.objects.all()
+            sort = 'default'
+        categorys = GoodsCategory.objects.all()
         try:
-            category=GoodsCategory.objects.get(id=category_id)
+            category = GoodsCategory.objects.get(id=category_id)
         except GoodsCategory.DoesNotExist:
             return redirect(reverse('goods:index'))
-        new_skus=GoodsSKU.objects.filter(category=category)[:2]
-        skus=GoodsSKU.objects.filter(category=category).order_by(sort_methods[sort])
-        page_num=int(page_num)
-        paginator=Paginator(skus,2)
+        new_skus = GoodsSKU.objects.filter(category=category)[:2]
+        skus = GoodsSKU.objects.filter(category=category).order_by(sort_methods[sort])
+        page_num = int(page_num)
+        paginator = Paginator(skus, 2)
         try:
-            page=paginator.page(page_num)
+            page = paginator.page(page_num)
         except EmptyPage:
-            page=paginator.page(0)
-        page_list=paginator.page_range
-        cart_num=self.get_cart_number(request)
-        context={
+            page = paginator.page(0)
+        page_list = paginator.page_range
+        cart_num = self.get_cart_number(request)
+        context = {
             'sort': sort,
             'category': category,
             'cart_num': cart_num,
@@ -116,4 +116,4 @@ class ListView(BaseCartView):
             'page_skus': page,
             'page_list': page_list
         }
-        return render(request,'list.html',context)
+        return render(request, 'list.html', context)

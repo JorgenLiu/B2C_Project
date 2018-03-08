@@ -127,8 +127,8 @@ STATIC_URL = '/static/'
 # for django would automatically take the first element
 # If it is defined as a string,
 # the website would crash for the path is invalid
-STATICFILES_DIRS=[
-    os.path.join(BASE_DIR,'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
 ]
 
 # Email Server Configuration
@@ -159,18 +159,22 @@ DEFAULT_FILE_STORAGE = 'utils.fastdfs.storage.FastDFSStorage'
 CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
 SERVER_IP = 'http://192.168.195.130:8888/'
 
-
 TINYMCE_DEFAULT_CONFIG = {
-  'theme': 'advanced',
-  'width': 600,
-  'height': 400,
+    'theme': 'advanced',
+    'width': 600,
+    'height': 400,
 }
 
 HAYSTACK_CONNECTIONS = {
-  'default': {
-      'ENGINE': 'utils.jieba_based_segmentation.whoosh_cn_backend.WhooshEngine',
-      # 'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-      'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
-  }
+    'default': {
+        'ENGINE': 'utils.jieba_based_segmentation.whoosh_cn_backend.WhooshEngine',
+        # 'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
+    }
 }
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
+ALIPAY_APPID = '2016091100487859'
+APP_PRIVATE_KEY_PATH = os.path.join(BASE_DIR, 'apps/orders/app_private_key.pem')
+ALIPAY_PUBLIC_KEY_PATH = os.path.join(BASE_DIR, 'apps/orders/alipay_public_key.pem')
+ALIPAY_URL = 'https://openapi.alipaydev.com/gateway.do'
